@@ -224,7 +224,8 @@ def service_main() -> None:
                 print("While trying to respond with error message: ", error_response, file=sys.stderr)
         except Exception as e:
             # Handle any errors that occur during processing
-            error_response = str(e)
+            error_response = f'{type(Exception()).__module__}.{type(e).__name__}: {str(e)}'
+            print(error_response, file=sys.stderr)
             if state == State.SENDING:
                 error(socket, ErrorCode.UNCATEGORISED, error_response)
                 state = State.RECEIVING
