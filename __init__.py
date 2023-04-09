@@ -1,1 +1,1 @@
-from .pyservice import email
+from pyservice.pyservice import *
