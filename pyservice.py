@@ -79,6 +79,16 @@ class Metadata:
             'errors': self.errors
         }
 
+    def from_dictionary(dictionary: Dict[str, Any]) -> 'Metadata':
+        return Metadata(
+            name=dictionary['name'],
+            description=dictionary['description'],
+            timeout=Timeout(dictionary['timeout']),
+            arguments=dictionary['arguments'],
+            returns=dictionary['returns'],
+            errors=dictionary['errors']
+        )
+
 
 def ok(socket, array):
     socket.send_multipart([b"OK"] + [arg.encode() for arg in array])
