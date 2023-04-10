@@ -36,5 +36,5 @@ class Message:
 
 @dataclass
 class Thread:
-    id: int
+    id: str
     messages: List[Message]
