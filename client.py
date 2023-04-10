@@ -6,6 +6,9 @@ from .pyservice import ErrorCode, Metadata, ProtocolException, UnknownCommandExc
 import zmq
 
 
+class TimeoutException(Exception):
+    pass
+
 def call(endpoint: str, command: str, arguments: List[str] = []) -> List[str]:
     """
     Calls a service function.
@@ -21,7 +24,9 @@ def call(endpoint: str, command: str, arguments: List[str] = []) -> List[str]:
     Raises:
         UnknownCommandException: The given command is invalid.
         ProtocolException: The response from the service function
-        was invalid.
+                           was invalid.
+        TimeoutException: The service function did not respond
+                          within the timeout period.
     """
     context = zmq.Context.instance()
     with context.socket(zmq.REQ) as socket:
@@ -48,7 +53,12 @@ def __call_impl(socket: zmq.Socket, command: str, arguments: List[str]) -> List[
     socket.send_multipart([command.encode()] + [arg.encode()
                           for arg in arguments])
 
-    response = socket.recv_multipart()
+    try:
+        response = socket.recv_multipart()
+    except zmq.error.Again:
+        raise TimeoutException(
+            f'no response from service after {socket.rcvtimeo} ms')
+
     if len(response) > 0:
         if response[0] == b"OK":
             return [arg.decode() for arg in response[1:]]
