@@ -4,10 +4,25 @@ from typing import Dict, List, Union
 
 
 class Headers(dict):
-    def __init__(self, headers: List[Dict[str, str]]):
-        super().__init__()
+    @staticmethod
+    def from_email_headers(headers: List[Dict[str, str]]) -> 'Headers':
+        instance = Headers()
         for header in headers:
-            self[header["name"]] = header["value"]
+            instance[header["name"]] = header["value"]
+        return instance
+
+    @staticmethod
+    def from_dictionary(headers: Dict[str, str]) -> 'Headers':
+        instance = Headers()
+        for key, value in headers.items():
+            instance[key] = value
+        return instance
+
+    def __getitem__(self, key):
+        return super().__getitem__(key.lower())
+
+    def __setitem__(self, key, value):
+        super().__setitem__(key.lower(), value)
 
 
 @dataclass
@@ -18,7 +33,7 @@ class MimeBody:
 
 @dataclass
 class Message:
-    header: Headers
+    headers: Headers
     body: Union[MimeBody, str]
 
     def get_body_str(self) -> str:
