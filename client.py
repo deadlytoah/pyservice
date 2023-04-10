@@ -37,9 +37,9 @@ def call(endpoint: str, command: str, arguments: List[str] = []) -> List[str]:
 
 def __metadata_impl(socket: zmq.Socket, command: str) -> Metadata:
     response = __call_impl(socket, "metadata", [command])
-    if len(response) > 0:
-        return Metadata.from_dictionary(json.loads(response[1]))
-    else:
+    try:
+        return Metadata.from_dictionary(json.loads(response[0]))
+    except IndexError:
         raise ProtocolException(
             f'invalid metadata response: {response}')
 
