@@ -29,6 +29,12 @@ class Message:
         """
         return {"role": self.role, "content": self.text}
 
+    @staticmethod
+    def from_dictionary(data: Dict[str, str]) -> 'Message':
+        role = data.get('role')
+        text = data.get('text')
+        return Message(role=role, text=text)
+
 
 class SystemMessage(Message):
     """Represents a system message."""
