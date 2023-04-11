@@ -31,8 +31,8 @@ class Message:
 
     @staticmethod
     def from_dictionary(data: Dict[str, str]) -> 'Message':
-        role = data.get('role')
-        text = data.get('text')
+        role = data['role']
+        text = data['text']
         return Message(role=role, text=text)
 
 

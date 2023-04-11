@@ -79,6 +79,7 @@ class Metadata:
             'errors': self.errors
         }
 
+    @staticmethod
     def from_dictionary(dictionary: Dict[str, Any]) -> 'Metadata':
         return Metadata(
             name=dictionary['name'],

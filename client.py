@@ -9,6 +9,7 @@ import zmq
 class TimeoutException(Exception):
     pass
 
+
 def call(endpoint: str, command: str, arguments: List[str] = []) -> List[str]:
     """
     Calls a service function.
@@ -57,7 +58,7 @@ def __call_impl(socket: zmq.Socket, command: str, arguments: List[str]) -> List[
         response = socket.recv_multipart()
     except zmq.error.Again:
         raise TimeoutException(
-            f'no response from service after {socket.rcvtimeo} ms')
+            f'no response from service after {int(socket.rcvtimeo)} ms')
 
     if len(response) > 0:
         if response[0] == b"OK":
