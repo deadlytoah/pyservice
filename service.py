@@ -1,7 +1,7 @@
 import json
 import subprocess
 import sys
-from typing import Callable, Dict, List, Union
+from typing import Callable, Dict, List, Optional, Union
 
 import zmq
 from zmq.asyncio import Context, Socket
@@ -171,26 +171,38 @@ class Service:
             'metadata': metadata
         }
 
-    async def run(self) -> None:
+    async def run(self, port: Optional[int] = None) -> None:
         """
-        Runs the service asynchronously.  The service will listen for
-        requests on a random port, and will print the port number to
-        stdout.  The port number will also be copied to the clipboard
-        on macOS.
+        Runs the service asynchronously.  If port is None, the service
+        will listen for requests on a random port, and will print the
+        port number to stdout.  The port number will also be copied to
+        the clipboard on macOS.
+
+        :param port: The port to listen on.  If None, a random port
+                     will be used.
+        :type port: Optional[int]
+
+        :return: None
+        :rtype: None
         """
         context = Context.instance()
 
         # Create a socket for the server
         socket: Socket = context.socket(zmq.REP)
-        socket.bind("tcp://*:0")
-        self.socket = socket
+        if port is None:
+            socket.bind("tcp://*:0")
+            self.socket = socket
 
-        # Print the port number to stdout
-        port_bytes = socket.getsockopt(zmq.LAST_ENDPOINT)
-        assert (isinstance(port_bytes, bytes))
-        port: str = port_bytes.decode().rsplit(":", 1)[-1]
-        print(port)
-        subprocess.call(f'/bin/echo -n {port} | pbcopy', shell=True)
+            # Print the port number to stdout
+            port_bytes = socket.getsockopt(zmq.LAST_ENDPOINT)
+            assert (isinstance(port_bytes, bytes))
+            assigned_port: str = port_bytes.decode().rsplit(":", 1)[-1]
+            print(assigned_port)
+            subprocess.call(
+                f'/bin/echo -n {assigned_port} | pbcopy', shell=True)
+        else:
+            socket.bind(f"tcp://*:{port}")
+            self.socket = socket
 
         state: State = State.RECEIVING
 
