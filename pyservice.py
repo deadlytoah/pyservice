@@ -1,11 +1,11 @@
 import json
 import subprocess
 import sys
-import zmq
-
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Callable, Dict, List, Union
+
+import zmq
 
 
 class ProtocolException(Exception):
@@ -91,6 +91,9 @@ class Metadata:
         )
 
 
+CommandInfo = Dict[str, Union[Callable[[List[str]], List[str]], Metadata]]
+
+
 def ok(socket, array):
     socket.send_multipart([b"OK"] + [arg.encode() for arg in array])
 
@@ -158,30 +161,34 @@ def __metadata_impl(function_name: str) -> Metadata:
         raise UnknownCommandException(command)
 
 
-__command_map: Dict[str, Dict[str, Union[Callable[[List[str]], List[str]], Metadata]]] = {
-    "help": {
-        'handler': help_screen,
-        'metadata': Metadata('help',
-                             'Describes available service commands.',
-                             Timeout.DEFAULT,
-                             'None',
-                             'A list of strings describing the available service commands.',
-                             '*RuntimeError* - metadata is missing or invalid.'),
-    },
-    "metadata": {
-        'handler': metadata,
-        'metadata': Metadata('metadata',
-                             'Describes the given command.',
-                             Timeout.DEFAULT,
-                             'A list of commands to describe.',
-                             'A list of metadata for the commmands in JSON',
-                             '''*ValueError* - arguments are empty.\\
-                                    *RuntimeError* - metadata is missing.'''),
-    },
-}
+def shared_command_map() -> Dict[str, CommandInfo]:
+    return {
+        "help": {
+            'handler': help_screen,
+            'metadata': Metadata('help',
+                                 'Describes available service commands.',
+                                 Timeout.DEFAULT,
+                                 'None',
+                                 'A list of strings describing the available service commands.',
+                                 '*RuntimeError* - metadata is missing or invalid.'),
+        },
+        "metadata": {
+            'handler': metadata,
+            'metadata': Metadata('metadata',
+                                 'Describes the given command.',
+                                 Timeout.DEFAULT,
+                                 'A list of commands to describe.',
+                                 'A list of metadata for the commmands in JSON',
+                                 '''*ValueError* - arguments are empty.\\
+                                        *RuntimeError* - metadata is missing.'''),
+        },
+    }
 
 
-def command_map() -> Dict[str, Dict[str, Union[Callable[[List[str]], List[str]], Metadata]]]:
+__command_map: Dict[str, CommandInfo] = shared_command_map()
+
+
+def command_map() -> Dict[str, CommandInfo]:
     return __command_map
 
 
