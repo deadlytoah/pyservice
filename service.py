@@ -32,11 +32,21 @@ class Service:
                 errors='None'
             ))
         self.register_command(
+            'list',
+            lambda args: self.list(),
+            Metadata(
+                'list',
+                'Lists the available service commands.',
+                Timeout.DEFAULT,
+                'None',
+                'A list of available service commands.',
+                'None'))
+        self.register_command(
             'help',
             lambda args: self.help_screen(),
             Metadata(
                 'help',
-                'Describes available service commands.',
+                'Describes the available service commands.',
                 Timeout.DEFAULT,
                 'None',
                 'A list of strings describing the available service commands.',
@@ -46,12 +56,12 @@ class Service:
             lambda args: self.metadata(args),
             Metadata(
                 'metadata',
-                'Describes the given command.',
+                'Returns metadata for the provided list of commands.',
                 Timeout.DEFAULT,
                 'A list of commands to describe.',
                 'A list of metadata for the commmands in JSON',
                 '''*ValueError* - arguments are empty.\\
-                    *RuntimeError* - metadata is missing.'''))
+                   *RuntimeError* - metadata is missing.'''))
 
     def __get_command_info(self, command: str) -> CommandInfo:
         try:
@@ -93,6 +103,9 @@ class Service:
             self.name(),
             self.description(),
         ]
+
+    def list(self: 'Service') -> List[str]:
+        return list(self.command_map.keys())
 
     def help_screen(self: 'Service') -> List[str]:
         """
