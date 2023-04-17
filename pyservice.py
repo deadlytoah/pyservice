@@ -8,6 +8,28 @@ from typing import Any, Callable, Dict, List, Union
 import zmq
 
 
+class ServiceException(Exception):
+    """
+    An exception that indicates an error in the external API request
+    or response.
+
+    Attributes:
+        message (str): The error message associated with the
+        exception.
+    """
+
+    def __init__(self, error_code: Enum, message: str):
+        """
+        Initializes a new instance of the ServiceException class.
+
+        Args:
+            message (str): The error message associated with the
+            exception.
+        """
+        super(ServiceException, self).__init__(message)
+        self.error_code = error_code
+
+
 class ProtocolException(Exception):
     """
     An exception that indicates unexpected data format in the external
@@ -44,14 +66,14 @@ class StateException(Exception):
         self.state = state
 
 
-class UnknownCommandException(Exception):
+class UnknownCommandException(ServiceException):
     """
     Indicates the given command is invalid.
     """
 
     def __init__(self, command):
-        super(UnknownCommandException, self).__init__(
-            f'unknown command {command}')
+        super(UnknownCommandException, self).__init__(ErrorCode.UNKNOWN_COMMAND,
+                                                      f'unknown command {command}')
         self.command = command
 
 
@@ -253,10 +275,10 @@ def service_main() -> None:
         except StateException as e:
             print("Illegal state: ", e.state, file=sys.stderr)
             exit(1)
-        except UnknownCommandException as e:
+        except ServiceException as e:
             error_response = str(e)
             if state == State.SENDING:
-                error(socket, ErrorCode.UNKNOWN_COMMAND, "unknown command")
+                error(socket, e.error_code, error_response)
                 state = State.RECEIVING
             else:
                 print("Illegal state: ", state, file=sys.stderr)
