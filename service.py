@@ -6,8 +6,10 @@ from typing import Callable, Dict, List, Optional, Union
 import zmq
 from zmq.asyncio import Context, Socket
 
-from pyservice import (CommandInfo, ErrorCode, Metadata, State, StateException,
-                       Timeout, UnknownCommandException)
+from pyservice import (CommandInfo, ErrorCode, State, StateException,
+                       UnknownCommandException)
+from pyservice.metadata import (Argument, Arguments, Metadata, Timeout,
+                                VariableLengthArguments)
 
 
 class Service:
@@ -27,7 +29,7 @@ class Service:
                 name='describe',
                 description='Returns the description of the service.',
                 timeout=Timeout.DEFAULT,
-                arguments='None',
+                arguments=Arguments.none(),
                 returns='The description of the service.',
                 errors='None'
             ))
@@ -38,7 +40,7 @@ class Service:
                 'list',
                 'Lists the available service commands.',
                 Timeout.DEFAULT,
-                'None',
+                Arguments.none(),
                 'A list of available service commands.',
                 'None'))
         self.register_command(
@@ -48,7 +50,7 @@ class Service:
                 'help',
                 'Describes the available service commands.',
                 Timeout.DEFAULT,
-                'None',
+                Arguments.none(),
                 'A list of strings describing the available service commands.',
                 '*RuntimeError* - metadata is missing or invalid.'))
         self.register_command(
@@ -58,7 +60,8 @@ class Service:
                 'metadata',
                 'Returns metadata for the provided list of commands.',
                 Timeout.DEFAULT,
-                'A list of commands to describe.',
+                Arguments.variable_length(
+                    Argument('command', 'The command to retrieve metadata for.')),
                 'A list of metadata for the commmands in JSON',
                 '''*ValueError* - arguments are empty.\\
                    *RuntimeError* - metadata is missing.'''))
@@ -126,8 +129,16 @@ class Service:
                 if metadata.timeout.value > 300:
                     help_string += 'Can take a long time to run.\\\n'
                 help_string += '\\\n**Arguments**\\\n'
-                help_string += f'{metadata.arguments}\\\n\\\n'
-                help_string += '**Returns**\\\n'
+                match metadata.arguments.inner:
+                    case None:
+                        help_string += 'None\\\n'
+                    case VariableLengthArguments(argument):
+                        help_string += 'This function accepts one or more of the following argument:\\\n'
+                        help_string += f'*{argument.name}* - {argument.description}\\\n'
+                    case arguments:
+                        for argument in arguments:
+                            help_string += f'*{argument.name}* - {argument.description}\\\n'
+                help_string += '\\\n**Returns**\\\n'
                 help_string += f'{metadata.returns}\\\n\\\n'
                 help_string += '**Errors**\\\n'
                 help_string += metadata.errors

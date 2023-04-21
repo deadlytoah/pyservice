@@ -1,11 +1,12 @@
 import json
 import subprocess
 import sys
-from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Dict, List, Union
+from typing import Callable, Dict, List, Union
 
 import zmq
+
+from pyservice.metadata import Argument, Arguments, Metadata, Timeout
 
 
 class ServiceException(Exception):
@@ -75,42 +76,6 @@ class UnknownCommandException(ServiceException):
         super(UnknownCommandException, self).__init__(ErrorCode.UNKNOWN_COMMAND,
                                                       f'unknown command {command}')
         self.command = command
-
-
-class Timeout(Enum):
-    DEFAULT = 300
-    LONG = 30000
-
-
-@dataclass
-class Metadata:
-    name: str
-    description: str
-    timeout: Timeout
-    arguments: str
-    returns: str
-    errors: str
-
-    def to_dictionary(self) -> Dict[str, Any]:
-        return {
-            'name': self.name,
-            'description': self.description,
-            'timeout': self.timeout.value,
-            'arguments': self.arguments,
-            'returns': self.returns,
-            'errors': self.errors
-        }
-
-    @staticmethod
-    def from_dictionary(dictionary: Dict[str, Any]) -> 'Metadata':
-        return Metadata(
-            name=dictionary['name'],
-            description=dictionary['description'],
-            timeout=Timeout(dictionary['timeout']),
-            arguments=dictionary['arguments'],
-            returns=dictionary['returns'],
-            errors=dictionary['errors']
-        )
 
 
 CommandInfo = Dict[str, Union[Callable[[List[str]], List[str]], Metadata]]
@@ -190,7 +155,7 @@ def shared_command_map() -> Dict[str, CommandInfo]:
             'metadata': Metadata('help',
                                  'Describes available service commands.',
                                  Timeout.DEFAULT,
-                                 'None',
+                                 Arguments.none(),
                                  'A list of strings describing the available service commands.',
                                  '*RuntimeError* - metadata is missing or invalid.'),
         },
@@ -199,7 +164,8 @@ def shared_command_map() -> Dict[str, CommandInfo]:
             'metadata': Metadata('metadata',
                                  'Describes the given command.',
                                  Timeout.DEFAULT,
-                                 'A list of commands to describe.',
+                                 Arguments.variable_length(
+                                     Argument('command', 'The name of the command to describe.')),
                                  'A list of metadata for the commmands in JSON',
                                  '''*ValueError* - arguments are empty.\\
                                         *RuntimeError* - metadata is missing.'''),
