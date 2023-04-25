@@ -1,13 +1,14 @@
 import json
 import subprocess
 import sys
+from enum import Enum
 from typing import Callable, Dict, List, Optional, Union
 
 import zmq
 from zmq.asyncio import Context, Socket
 
-from pyservice import (CommandInfo, ErrorCode, State, StateException,
-                       UnknownCommandException)
+from pyservice import (CommandInfo, ErrorCode, ServiceException, State,
+                       StateException, UnknownCommandException)
 from pyservice.metadata import (Argument, Arguments, Metadata, Timeout,
                                 VariableLengthArguments)
 
@@ -75,7 +76,7 @@ class Service:
     async def __ok(self, array: List[str]) -> None:
         await self.socket.send_multipart([b"OK"] + [arg.encode() for arg in array])
 
-    async def __error(self, code: ErrorCode, message: str) -> None:
+    async def __error(self, code: Enum, message: str) -> None:
         await self.socket.send_multipart(
             [b"ERROR", code.value.encode(), message.encode()])
 
@@ -178,7 +179,7 @@ class Service:
             else:
                 raise RuntimeError(f'metadata missing for {function_name}')
         else:
-            raise UnknownCommandException(command)
+            raise UnknownCommandException(function_name)
 
     def register_command(self, command: str, handler: Callable[[List[str]], List[str]], metadata: Metadata) -> None:
         """
@@ -265,10 +266,10 @@ class Service:
             except StateException as e:
                 print("Illegal state: ", e.state, file=sys.stderr)
                 exit(1)
-            except UnknownCommandException as e:
+            except ServiceException as e:
                 error_response = str(e)
                 if state == State.SENDING:
-                    await self.__error(ErrorCode.UNKNOWN_COMMAND, "unknown command")
+                    await self.__error(e.error_code, e.args[0])
                     state = State.RECEIVING
                 else:
                     print("Illegal state: ", state, file=sys.stderr)

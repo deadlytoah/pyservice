@@ -72,10 +72,9 @@ class UnknownCommandException(ServiceException):
     Indicates the given command is invalid.
     """
 
-    def __init__(self, command):
-        super(UnknownCommandException, self).__init__(ErrorCode.UNKNOWN_COMMAND,
-                                                      f'unknown command {command}')
-        self.command = command
+    def __init__(self, command: str):
+        super(UnknownCommandException, self).__init__(
+            ErrorCode.UNKNOWN_COMMAND, command)
 
 
 CommandInfo = Dict[str, Union[Callable[[List[str]], List[str]], Metadata]]

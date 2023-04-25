@@ -68,7 +68,7 @@ def __call_impl(socket: zmq.Socket, command: str, arguments: List[str]) -> List[
                 error_code = response[1].decode()
                 error_message = response[2].decode()
                 if error_code == ErrorCode.UNKNOWN_COMMAND.value:
-                    raise UnknownCommandException(command)
+                    raise UnknownCommandException(error_message)
                 else:
                     raise ProtocolException(
                         f'error {error_code}: {error_message}')
