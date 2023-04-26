@@ -2,15 +2,19 @@
 
 import json
 from typing import List
-from .pyservice import ErrorCode, Metadata, ProtocolException, UnknownCommandException
+
 import zmq
+from zmq.asyncio import Context, Socket
+
+from .pyservice import (ErrorCode, Metadata, ProtocolException,
+                        UnknownCommandException)
 
 
 class TimeoutException(Exception):
     pass
 
 
-def call(endpoint: str, command: str, arguments: List[str] = []) -> List[str]:
+async def call(endpoint: str, command: str, arguments: List[str] = []) -> List[str]:
     """
     Calls a service function.
 
@@ -29,20 +33,20 @@ def call(endpoint: str, command: str, arguments: List[str] = []) -> List[str]:
         TimeoutException: The service function did not respond
                           within the timeout period.
     """
-    context = zmq.Context.instance()
+    context = Context.instance()
     with context.socket(zmq.REQ) as socket:
         socket.linger = 0
         socket.connect(endpoint)
 
         socket.rcvtimeo = 300
-        metadata = __metadata_impl(socket, command)
+        metadata = await __metadata_impl(socket, command)
         socket.rcvtimeo = metadata.timeout.value
 
-        return __call_impl(socket, command, arguments)
+        return await __call_impl(socket, command, arguments)
 
 
-def __metadata_impl(socket: zmq.Socket, command: str) -> Metadata:
-    response = __call_impl(socket, "metadata", [command])
+async def __metadata_impl(socket: Socket, command: str) -> Metadata:
+    response = await __call_impl(socket, "metadata", [command])
     try:
         return Metadata.from_dictionary(json.loads(response[0]))
     except IndexError:
@@ -50,12 +54,11 @@ def __metadata_impl(socket: zmq.Socket, command: str) -> Metadata:
             f'invalid metadata response: {response}')
 
 
-def __call_impl(socket: zmq.Socket, command: str, arguments: List[str]) -> List[str]:
-    socket.send_multipart([command.encode()] + [arg.encode()
-                          for arg in arguments])
+async def __call_impl(socket: Socket, command: str, arguments: List[str]) -> List[str]:
+    await socket.send_multipart([command.encode()] + [arg.encode() for arg in arguments])
 
     try:
-        response = socket.recv_multipart()
+        response = await socket.recv_multipart()
     except zmq.error.Again:
         raise TimeoutException(
             f'no response from service after {int(socket.rcvtimeo)} ms')
