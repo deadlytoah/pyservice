@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import sys
 from enum import Enum
@@ -7,8 +8,9 @@ from typing import Callable, Dict, List, Optional, Union
 import zmq
 from zmq.asyncio import Context, Socket
 
-from pyservice import (CommandInfo, ErrorCode, ServiceException, State,
-                       StateException, UnknownCommandException)
+from pyservice import (CommandInfo, ErrorCode, FatalServiceError,
+                       ServiceException, State, StateException,
+                       UnknownCommandException)
 from pyservice.metadata import (Argument, Arguments, Metadata, Timeout,
                                 VariableLengthArguments)
 
@@ -275,8 +277,10 @@ class Service:
                     print("Illegal state: ", state, file=sys.stderr)
                     print("While trying to respond with error message: ",
                           error_response, file=sys.stderr)
+            except FatalServiceError as e:
+                raise e
             except Exception as e:
-                # Handle any errors that occur during processing
+                # Handle any other errors that occur during processing
                 error_response = f'{type(Exception()).__module__}.{type(e).__name__}: {str(e)}'
                 print(error_response, file=sys.stderr)
                 if state == State.SENDING:

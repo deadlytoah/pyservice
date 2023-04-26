@@ -26,6 +26,19 @@ class ServiceException(Exception):
         self.error_code = error_code
 
 
+class FatalServiceError(Exception):
+    """
+    An exception that indicates a fatal error that is difficult to
+    recover from.  It should cause the service to abort.
+
+    :param message: The error message associated with the exception.
+    :type message: str
+    """
+
+    def __init__(self, message: str):
+        super(FatalServiceError, self).__init__(message)
+
+
 class ProtocolException(Exception):
     """
     An exception that indicates unexpected data format in the external
