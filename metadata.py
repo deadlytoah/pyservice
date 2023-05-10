@@ -120,8 +120,8 @@ class Arguments:
             case 'variable_length':
                 return Arguments.variable_length(Argument.from_dictionary(dictionary['argument']))
             case 'list':
-                list: List[List[str]] = dictionary['value']
-                return Arguments(*[Argument(item[0], item[1]) for item in list])
+                list: List[dict[str, str]] = dictionary['arguments']
+                return Arguments(*[Argument.from_dictionary(item) for item in list])
             case unreachable:
                 assert_never(unreachable)
 
