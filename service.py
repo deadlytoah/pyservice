@@ -295,8 +295,8 @@ class Service:
                     print("Illegal state: ", state, file=sys.stderr)
                     print("While trying to respond with error message: ",
                           error_response, file=sys.stderr)
-            except FatalServiceError as e:
-                raise e
+            except FatalServiceError:
+                raise
             except Exception as e:
                 # Handle any other errors that occur during processing
                 error_response = f'{type(Exception()).__module__}.{type(e).__name__}: {str(e)}'
