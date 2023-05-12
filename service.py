@@ -17,11 +17,10 @@
 #
 
 import json
-import os
 import subprocess
 import sys
 from enum import Enum
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional
 
 import zmq
 from zmq.asyncio import Context, Socket
@@ -96,9 +95,8 @@ class Service:
     async def __ok(self, array: List[str]) -> None:
         await self.socket.send_multipart([b"OK"] + [arg.encode() for arg in array])
 
-    async def __error(self, code: Enum, message: str) -> None:
-        await self.socket.send_multipart(
-            [b"ERROR", code.value.encode(), message.encode()])
+    async def __error(self, code: Enum, message: str, context: Optional[str] = None) -> None:
+        await self.socket.send_multipart([b"ERROR", code.value.encode(), message.encode()] + ([context.encode()] if context else []))
 
     def name(self) -> str:
         """
@@ -289,7 +287,7 @@ class Service:
             except ServiceException as e:
                 error_response = str(e)
                 if state == State.SENDING:
-                    await self.__error(e.error_code, e.args[0])
+                    await self.__error(e.error_code, e.args[0], context=e.context)
                     state = State.RECEIVING
                 else:
                     print("Illegal state: ", state, file=sys.stderr)

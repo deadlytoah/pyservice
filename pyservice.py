@@ -17,7 +17,7 @@
 #
 
 from enum import Enum
-from typing import Callable, Dict, List, Union
+from typing import Callable, Dict, List, Optional, Union
 
 from pyservice.metadata import Metadata
 
@@ -32,7 +32,7 @@ class ServiceException(Exception):
         exception.
     """
 
-    def __init__(self, error_code: Enum, message: str):
+    def __init__(self, error_code: Enum, message: str, context: Optional[str] = None):
         """
         Initializes a new instance of the ServiceException class.
 
@@ -42,6 +42,7 @@ class ServiceException(Exception):
         """
         super(ServiceException, self).__init__(message)
         self.error_code = error_code
+        self.context = context
 
 
 class FatalServiceError(Exception):
@@ -67,7 +68,7 @@ class ProtocolException(Exception):
         exception.
     """
 
-    def __init__(self, message: str):
+    def __init__(self, message: str, context: Optional[str] = None):
         """
         Initializes a new instance of the ProtocolException class.
 
@@ -75,7 +76,7 @@ class ProtocolException(Exception):
             message (str): The error message associated with the
             exception.
         """
-        super(ProtocolException, self).__init__(message)
+        super(ProtocolException, self).__init__(message, context)
 
 
 class ErrorCode(Enum):
