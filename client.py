@@ -30,6 +30,22 @@ class TimeoutException(Exception):
     pass
 
 
+class ServiceException(Exception):
+    """
+    Represents an error that occurred during the execution of the service
+    function.
+
+    :param error_code: The predefined error code representing this error.
+    :type error_code: str
+    :param reason: A more descriptive reason for the error.
+    :type reason: str
+    """
+
+    def __init__(self, error_code: str, reason: str):
+        self.error_code = error_code
+        self.reason = reason
+
+
 async def call(endpoint: str, command: str, arguments: List[str] = []) -> List[str]:
     """
     Calls a service function.
@@ -89,8 +105,7 @@ async def __call_impl(socket: Socket, command: str, arguments: List[str]) -> Lis
                 if error_code == ErrorCode.UNKNOWN_COMMAND.value:
                     raise UnknownCommandException(error_message)
                 else:
-                    raise ProtocolException(
-                        f'error {error_code}: {error_message}')
+                    raise ServiceException(error_code, error_message)
             else:
                 raise ProtocolException(
                     f'invalid error response: {response}')
